@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "description": "A Youtube Like clone",
   "main": "index.js",
-  "type":"module",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "Dev":"nodemon index.js"
   },
   "author": "Rohit Singh",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "prettier": "^3.1.1"
+  }
 }

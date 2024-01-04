@@ -1,0 +1,6 @@
+/.vscode
+/package-json
+
+*.env
+.env
+.env.*
