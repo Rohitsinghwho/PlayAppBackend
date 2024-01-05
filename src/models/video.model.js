@@ -8,7 +8,7 @@ const VideoSchema= new Schema(
         },
         owner:{
             type : Schema.Types.ObjectId,  //connecting with user model
-            ref:"user",
+            ref:"User",
         },
         title:{
             type:String,
@@ -46,4 +46,4 @@ const VideoSchema= new Schema(
 // now we can write aggrgate queries 
 VideoSchema.plugin(mongooseAggregatePaginate);
 
-export const video= mongoose.model("video",VideoSchema);
+export const Video= mongoose.model("Video",VideoSchema);
