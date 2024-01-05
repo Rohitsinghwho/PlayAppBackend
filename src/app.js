@@ -17,4 +17,13 @@ app.use(express.static('../public/temp'))
 // cokkie parser is used to set the cookies in user browser and remove them
 app.use(cookieParser())
 
+
+// importing router
+import userRouter from "./routes/user.routes.js"
+
+app.use("/api/v1/users",userRouter);
+// http://localhost:8000/api/v1/users/regisiter
+// error handling middleware
+
+
 export{app};
