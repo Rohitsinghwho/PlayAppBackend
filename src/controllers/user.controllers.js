@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import {User} from "../models/user.model.js"
 import { UploadOnCloudinary } from "../utils/cloudinary.js";
 import {ApiResponse} from "../utils/ApiResponse.js"
+import validator from "email-validator";
 const RegisterUser= asyncHandler(async(req,res)=>{
    /*
     1- extract the user from body
@@ -22,15 +23,21 @@ const RegisterUser= asyncHandler(async(req,res)=>{
     if(!email || !password ||!fullName||!username){
         throw new ApiError(409,"Input Fields are required");
     }
-    
-    const isPresent=User.findOne({
+    const isEmail=  validator.validate(email)
+    if(!isEmail){
+        throw new ApiError(409,"Please Enter a valid Email");
+    }
+    const isPresent=await User.findOne({
         $or:[{email},{username}]
     });
-    if(!isPresent){
-        throw new ApiError(400,"User Already present");
+    if(isPresent){
+        throw new ApiError(400,"User with email and Username is already Present");
     }
     const avatarLocalPath=req.files?.avatar[0]?.path;
-    const coverLocalpath= req.files?.coverImage[0]?.path;
+    let coverLocalpath;
+    if(req.files &&Array.isArray(req.files.coverImage)&& req.files.coverImage.length>0){
+        coverLocalpath=req.files.coverImage[0].path;
+    }
     if(!avatarLocalPath){
         throw new ApiError(400,"Avatar is required");
     }
@@ -43,6 +50,7 @@ const RegisterUser= asyncHandler(async(req,res)=>{
         fullName,
         username:username.toLowerCase(),
         email,
+        password,
         avatar:avatar.url,
         coverImage:coverImage?coverImage.url:"",
     })

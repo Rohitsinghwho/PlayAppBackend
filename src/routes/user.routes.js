@@ -5,7 +5,7 @@ const router= Router();
 
 router.route("/regisiter").post(
     // upload.fields can upload multiple files at a time
-    upload.fields(
+    upload.fields([
         {
             name:"avatar",
             maxlength:1,
@@ -14,7 +14,7 @@ router.route("/regisiter").post(
             name:"coverImage",
             maxlength:1,
         }
-    ),
+    ]),
     RegisterUser
     
     );
