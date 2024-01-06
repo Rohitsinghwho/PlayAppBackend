@@ -52,7 +52,7 @@ const UserSchema= new Schema(
 // password encryption done
 UserSchema.pre("save" ,async function(next){
     if(!this.isModified("password"))return next();
-    this.password=await bcrypt.hash("password",10);
+    this.password=await bcrypt.hash(this.password,10);
     next();
 
 })
@@ -63,7 +63,7 @@ UserSchema.methods.isPasswordCorrect = async function (password) {
 // Sign the jwt token to genrate AccessTokens
 UserSchema.methods.genrateAccessToken=function(){
     {
-        jwt.sign(
+        return jwt.sign(
             {
             _id : this._id,
             email:this.email,
@@ -79,7 +79,7 @@ UserSchema.methods.genrateAccessToken=function(){
 // Sign the jwt token to generate RefreshTokens
 UserSchema.methods.generateRefreshToken=function() {
     {
-        jwt.sign(
+        return jwt.sign(
             {
             _id : this._id,
         },process.env.REFRESH_TOKEN_SECRET,
