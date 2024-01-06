@@ -1,10 +1,11 @@
 import { asyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import {User} from "../models/user.model.js"
-import { UploadOnCloudinary } from "../utils/cloudinary.js";
+import { UploadOnCloudinary,DeletefromCloudnary } from "../utils/cloudinary.js";
 import {ApiResponse} from "../utils/ApiResponse.js"
 import validator from "email-validator";
 import jwt from "jsonwebtoken";
+import {v2 as cloudinary} from "cloudinary"
 // genrate Aceeses and refershtokens
 const generateAccessRefreshTokens = async(userId) =>{
     try {
@@ -34,7 +35,7 @@ const RegisterUser= asyncHandler(async(req,res)=>{
     9-send response
    */
 //extracted the user information from req.boby   
-  const {email,password,fullName,username}=req.body;
+    const {email,password,fullName,username}=req.body;
     // validate the data
     if(!email || !password ||!fullName||!username){
         throw new ApiError(409,"Input Fields are required");
@@ -84,7 +85,7 @@ const RegisterUser= asyncHandler(async(req,res)=>{
     // Login User route
 const loginUser= asyncHandler(async(req,res)=>{
     const {username,email,password}=req.body
-    console.log(req.body)
+    // console.log(req.body)
     //checking if username or email is empty
     if(!username&&!email){
         throw new ApiError(401,"Email or Username is required")
@@ -111,7 +112,7 @@ const loginUser= asyncHandler(async(req,res)=>{
         httpOnly:true,
         secure:true,
     }
-    res.status(200).cookie("refreshToken", refreshToken,options).cookie("accessToken",accessToken,options).json(
+    return res.status(200).cookie("refreshToken", refreshToken,options).cookie("accessToken",accessToken,options).json(
         new ApiResponse(201,{
             user:createdUser,accessToken,refreshToken,
         },"Logged In successfully!!")
@@ -164,14 +165,107 @@ const updateRefreshToken = asyncHandler(async(req,res)=>{
         httpOnly:true,
         secure:true,
     }    
-    res.status(200).cookie("refreshToken",refreshToken,options).cookie("accessToken",accessToken,options).json(
+    return res.status(200).cookie("refreshToken",refreshToken,options).cookie("accessToken",accessToken,options).json(
         new ApiResponse(201,{accessToken,refreshToken},)
     )
 
 })
+
+// updatePassword route
+const UpdateAndChangePassword= asyncHandler(async(req,res)=>{
+    const {Oldpassword,NewPassword}=req.body;
+    if((!Oldpassword||!NewPassword)){
+        throw new ApiError(400,"Password details cannot be empty")
+    }
+    const user= await User.findById(req.user?._id);
+    const isMatched=  await user.isPasswordCorrect(Oldpassword)
+    if(!isMatched){
+        throw new ApiError(401,'Wrong Current Password')
+        }
+    user.password=NewPassword;
+    await user.save({validateBeforeSave:false})
+    return res.status(200).json(
+        new ApiResponse(201,{},"Password Changed Successfully")
+    )
+})
+
+//get User route
+const getUser= asyncHandler(async(req,res)=>{
+    // const user = await User.findById(req.user._id);
+    return res.status(200).json(new ApiResponse(200,req.user,"User Fetched Successfully"))
+})
+// UpdateAccountDetails route
+const UpdateAccountDetails= asyncHandler(async(req,res)=>{
+    const {fullName,email}=req.body;
+    const OldEmail= req.user.email;
+    const oldfullName=req.user.fullName;
+    if((oldfullName===fullName)&&(OldEmail===email)){
+        throw new ApiError(400,"User details are already updated with same values");
+    }
+    if(!fullName||!email){
+        throw new ApiError(400,"All fields are requierd")
+    }
+    const user= await User.findByIdAndUpdate(req.user._id,
+        {
+            $set:{
+                fullName,
+                email
+            }
+        } ,
+        {
+            new:true
+        }
+        ).select("-password")
+        return res.status(200).json(new ApiResponse(201,user,"FullName and Email are Updated"))
+})
+
+//updateProfilepicture route
+const UpdateProfilePicture= asyncHandler(async(req,res)=>{
+
+    const profilePic=req.file?.path;
+    if(!profilePic){
+        throw new ApiError(400,"No Image is selected to upload");
+    }
+    let user=await User.findById(req.user._id);
+    await DeletefromCloudnary(user.avatar)
+    const avatar=await UploadOnCloudinary(profilePic);
+    if(!avatar){
+        throw new ApiError(500,"internal Server error file not uploaded on cloud");
+    }    
+    user.avatar=avatar.url;
+    await user.save({validateBeforeSave : true});
+    return res.status(200).json(new ApiResponse(201,{},"profile picture Uploded Successfully"))
+
+})
+
+//updateCoverImage route
+const updateCoverImage= asyncHandler(async(req,res)=>{
+
+    const coverImage=req.file?.path;
+    if(!coverImage){
+        throw new ApiError(400,"No Image is selected to upload");
+    }
+    let user=await User.findById(req.user._id);
+    const coverfile=await UploadOnCloudinary(coverImage);
+    await DeletefromCloudnary(user.coverImage)
+    await DeletefromCloudnary(user.coverImage);
+    if(!coverfile){
+        throw new ApiError(500,"internal Server error file not uploaded on cloud");
+    }
+    user.coverImage=coverfile.url;
+    await user.save({validateBeforeSave : true});
+    return res.status(200).json(new ApiResponse(201,{},"Cover picture Uploded Successfully"))
+
+})
+
 export {
     RegisterUser,
     loginUser,
     logoutUser,
-    updateRefreshToken
+    updateRefreshToken,
+    UpdateAndChangePassword,
+    getUser,
+    UpdateAccountDetails,
+    UpdateProfilePicture,
+    updateCoverImage
 }
