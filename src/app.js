@@ -18,12 +18,16 @@ app.use(express.static('../public/temp'))
 app.use(cookieParser())
 
 
-// importing router
+
 import userRouter from "./routes/user.routes.js"
+import videoRouter from "./routes/video.routes.js"
+import tweetRouter from "./routes/tweets.routes.js"
+
+
+
+
 
 app.use("/api/v1/users",userRouter);
-// http://localhost:8000/api/v1/users/regisiter
-// error handling middleware
-
-
+app.use("/api/v1/videos",videoRouter);
+app.use("/api/v1/tweet",tweetRouter);
 export{app};

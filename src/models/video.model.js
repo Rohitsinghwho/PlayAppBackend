@@ -4,7 +4,7 @@ const VideoSchema= new Schema(
     {
         thumbnail:{
             type:String,
-            required:[true,"Please provide a Thumbnail Url"]
+            // required:[true,"Please provide a Thumbnail Url"]
         },
         owner:{
             type : Schema.Types.ObjectId,  //connecting with user model
