@@ -363,7 +363,7 @@ const getUserChannelInfo = asyncHandler(async (req, res) => {
   }
 
   // Send the single document in the response
-  res
+  return res
     .status(200)
     .json(new ApiResponse(201, channel[0], "Channel Fetched Successfully"));
 });
