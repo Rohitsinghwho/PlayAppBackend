@@ -5,7 +5,6 @@ import { UploadOnCloudinary,DeletefromCloudnary } from "../utils/cloudinary.js";
 import {ApiResponse} from "../utils/ApiResponse.js"
 import validator from "email-validator";
 import jwt from "jsonwebtoken";
-import {v2 as cloudinary} from "cloudinary"
 // genrate Aceeses and refershtokens
 const generateAccessRefreshTokens = async(userId) =>{
     try {
@@ -257,6 +256,77 @@ const updateCoverImage= asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(201,{},"Cover picture Uploded Successfully"))
 
 })
+//get UserProfilePage/dashboard
+const getUserChannelInfo= asyncHandler(async(req,res)=>{
+    const {username}= req.params
+    // console.log(username);
+    // fint the subscriber and subscribedtocount , isSubscribed
+    if(!username){
+        throw new ApiError(400,"User is not present");
+    }
+    const channel= await User.aggregate([
+        {
+            // first pipeline
+            $match:{username:username.toLowerCase()},
+        },
+        {
+            //second pipeline
+            $lookup: {
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"channel",
+                as:"subscribers"
+            }
+        }
+        ,
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"subscriber",
+                as:"subscribedto"
+            }
+        },
+        {
+            $addFields:{
+                subscribedToCount :{$size:"$subscribedto"},
+                subscriberCount:{$size:"$subscribers"},
+                isSubscribed:{
+                    $cond:{
+                        if: {$in:[req.user?._id,"$subscribers.subscriber"]},
+                        then:true,
+                        else:false,
+                    }
+                }
+            }
+        }
+        ,{
+            $project:{
+                username:1,
+                email:1,
+                avatar:1,
+                coverImage:1,
+                subscribedToCount:1,
+                subscriberCount:1,
+                isSubscribed:1,
+                fullName:1,
+                createdAt:1,
+            }
+        }
+    ])
+    if (!channel || channel.length === 0) {
+        throw new ApiError(404, "Channel not found");
+    }
+    
+    if (channel.length > 1) {
+        // Handle the case where multiple documents match the criteria
+        throw new ApiError(500, "Unexpected: Multiple channels found for the same username");
+    }
+    
+    // Send the single document in the response
+    res.status(200).json(new ApiResponse(201, channel[0], "Channel Fetched Successfully"));
+    
+})
 
 export {
     RegisterUser,
@@ -267,5 +337,6 @@ export {
     getUser,
     UpdateAccountDetails,
     UpdateProfilePicture,
-    updateCoverImage
+    updateCoverImage,
+    getUserChannelInfo  
 }
