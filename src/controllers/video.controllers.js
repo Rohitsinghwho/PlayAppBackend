@@ -7,11 +7,12 @@ import {
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Video} from "../models/video.model.js"
 import { mongoose } from "mongoose";
-import { User } from "../models/user.model.js";
 // import { User } from "../models/user.model.js";
 
 
-
+// link from postman
+//http://localhost:8000/api/v1/videos?userId=6599b1ad18d0fb51a83a1cea&query=Hey this is second video
+// &sortBy=createdAt&sortType=desc&page=2&limit=2
 const getAllVideos= asyncHandler(async(req,res)=>{
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
@@ -59,11 +60,9 @@ const getAllVideos= asyncHandler(async(req,res)=>{
     }
     pipeline.push({$skip:(page-1)*limit});
     pipeline.push({$limit:Number(limit)});
-    const videos = await Video.aggregate(pipeline).exec();
-
-    
+    const videos = await Video.aggregate(pipeline).exec();    
     res.status(200).json(new ApiResponse(200,{
-        videos,
+        videoS,
         page:Number(page),
         limit:Number(limit),
         totalCount:videos.length
