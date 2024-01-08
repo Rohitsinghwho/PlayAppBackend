@@ -62,7 +62,7 @@ const getAllVideos= asyncHandler(async(req,res)=>{
     pipeline.push({$limit:Number(limit)});
     const videos = await Video.aggregate(pipeline).exec();    
     res.status(200).json(new ApiResponse(200,{
-        videoS,
+        videos,
         page:Number(page),
         limit:Number(limit),
         totalCount:videos.length
