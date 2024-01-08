@@ -5,7 +5,7 @@ import {
     updateVideo,
     togglePublishStatus,
     deleteVideo,
-    // getAllVideos,
+    getAllVideos
 
 } from "../controllers/video.controllers.js"
 import {jwtVerify} from "../middlewares/auth.middleware.js"
@@ -16,6 +16,7 @@ router.use(jwtVerify); // Apply verifyJWT middleware to all routes in this file
 
 router
     .route("/")
+    .get(getAllVideos)
     .post(
         upload.fields([
             {

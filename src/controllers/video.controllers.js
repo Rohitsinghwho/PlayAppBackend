@@ -6,16 +6,73 @@ import {
   } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Video} from "../models/video.model.js"
+import { mongoose } from "mongoose";
+import { User } from "../models/user.model.js";
+// import { User } from "../models/user.model.js";
 
 
 
-// const getAllVideos= asyncHandler(async(req,res)=>{
-//     //title,description,thumbnail
+const getAllVideos= asyncHandler(async(req,res)=>{
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
-// })
+   // Match stage for filtering
+   const pipeline = [];
+    if (query) {
+    pipeline.push(
+        { 
+            $match: { 
+                title: { 
+                    //regex --regular expression matches the query according to the title
+                    $regex: new RegExp(query, 'i') 
+                } 
+            } 
+        });
+    }
+    // console.log(userId)
+    if(userId){
+    //  console.log("Getting into userId pipeline")
+        pipeline.push(
+            {
+                $match:{
+                    owner:new mongoose.Types.ObjectId(userId)           
+                }
+            }
+            
+        )
+    }
+    // console.log(new mongoose.Types.ObjectId(userId))
+    // sortby- view or createdAt
+    //sorttype- asc or desc
+    if(sortBy){
+        let sortOrder;
+        if(sortType==="desc"){
+            sortOrder=-1;
+        }
+        else{
+            sortOrder=1;
+        }
+        pipeline.push({
+            $sort:{
+                [sortBy]:sortOrder,
+            }
+        })
+    }
+    pipeline.push({$skip:(page-1)*limit});
+    pipeline.push({$limit:Number(limit)});
+    const videos = await Video.aggregate(pipeline).exec();
+
+    
+    res.status(200).json(new ApiResponse(200,{
+        videos,
+        page:Number(page),
+        limit:Number(limit),
+        totalCount:videos.length
+    },"Videos Fetched successfully"));
+})
 //publish Video route
 const publishAVideo= asyncHandler(async(req,res)=>{
     const {title,description}=req.body;
+    const userId = req.user._id; // Assuming the user's _id is available in req.user
     if(!title || !description){
         throw new ApiError(400,"Title or description fields are missing")
     }
@@ -39,6 +96,7 @@ const publishAVideo= asyncHandler(async(req,res)=>{
     const CreatedVideo= await Video.create({
         title,
         description,
+        owner:userId,
         videoFile:videoFile.url,
         thumbnail:thumbnail?thumbnail.url:"",
         duration:videoFile.duration,    
@@ -50,7 +108,8 @@ const publishAVideo= asyncHandler(async(req,res)=>{
 
 
 })
-const getVideoById= asyncHandler(async(req,res)=>{
+const
+ getVideoById= asyncHandler(async(req,res)=>{
     const {videoId}=req.params;
     if(!videoId){
         throw new ApiError(501,"User id is required")
@@ -138,5 +197,6 @@ export{
     getVideoById,
     updateVideo,
     togglePublishStatus,
-    deleteVideo
+    deleteVideo,
+    getAllVideos
 }
