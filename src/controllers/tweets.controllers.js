@@ -31,34 +31,48 @@ const getUserTweets = asyncHandler(async (req, res) => {
   const UserId = req.params.id || req.user._id;
   const tweets = await User.aggregate([
     {
-        //first pipeline
       $match: {
-        _id:  new mongoose.Types.ObjectId(UserId)
+        _id:  new mongoose.Types.ObjectId(UserId),
       },
     },
     {
-        //second Pipeline
-        $lookup:{
-            from:"tweets",
-            localField:"_id",
-            foreignField:"owner",
-            as:"posts"
-        }
-
+      $lookup: {
+        from: "tweets",
+        localField: "_id",
+        foreignField: "owner",
+        as: "Posts",
+      },
     },
     {
-        $addFields:{
-            ownerPosts : "$posts",
-        }
+      $addFields: {
+        ownerPosts: "$Posts",
+      },
     },
     {
-        //third pipeline
-        $project:{
-            username:1,
-            fullName:1,
-            ownerPosts:1,
-        }
-    }
+      $unwind: "$ownerPosts",
+    },
+    {
+      $sort: {
+        "ownerPosts.createdAt": -1,
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        username: { $first: "$username" },
+        fullName: { $first: "$fullName" },
+        createdAt: { $first: "$createdAt" },
+        ownerPosts: { $push: "$ownerPosts" },
+      },
+    },
+    {
+      $project: {
+        username: 1,
+        fullName: 1,
+        ownerPosts: 1,
+        createdAt: 1,
+      },
+    },
   ]);
 // console.log(tweets)
   if (!tweets.length) {
