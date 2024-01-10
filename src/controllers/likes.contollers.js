@@ -32,14 +32,14 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     const {commentId} = req.params
     //TODO: toggle like on comment
     const {videoId}=req.query;
-    if(!videoId)throw new ApiError('No Video Provided',400);
+    if(!videoId)throw new ApiError(400,'No Video Provided');
     const userId= req.user._id;
     if (!isValidObjectId(userId) || !isValidObjectId(videoId)){
-        throw new ApiError("Invalid User or Video", 400)
+        throw new ApiError(400,"Invalid User or Video")
     }
     // const isComment= await Like.findById(commentId)
     const comment= await Like.findOne({likedBy:new mongoose.Types.ObjectId(userId),comment:new mongoose.Types.ObjectId(commentId)});
-    if(!comment){
+    if(comment){
         await Like.deleteOne(comment);
         return res.status(200).json(new ApiResponse(200,{},"comment Unliked Successfully"))
     }
@@ -49,6 +49,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
             comment:commentId,
         })
     }
+
 
     return res.status(200).json(new ApiResponse(200,{},"Comment Liked Successfully"));
 
