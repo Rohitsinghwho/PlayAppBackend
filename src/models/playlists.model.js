@@ -14,6 +14,7 @@ const PlaylistModel= new Schema(
         {
         type:Schema.Types.ObjectId,
         ref:"Video",
+        unique:true,
         }],
     owner:{
         type:Schema.Types.ObjectId,
