@@ -7,12 +7,41 @@ import {
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Video} from "../models/video.model.js"
 import { mongoose } from "mongoose";
+import { User } from "../models/user.model.js";
 // import { User } from "../models/user.model.js";
 
 
 // link from postman
 //http://localhost:8000/api/v1/videos?userId=6599b1ad18d0fb51a83a1cea&query=Hey this is second video
 // &sortBy=createdAt&sortType=desc&page=2&limit=2
+const addVideoToWatchHistory = async (userId, videoId) => {
+    try {
+        // Find the user by ID
+        const user = await User.findById(userId);
+  
+        if (!user) {
+            // Handle case where user is not found
+            throw new Error('User not found');
+        }
+  
+        // Add the videoId to the watchHistory array
+        user.watchHistory.push(videoId);
+  
+        // Save the updated user document
+        const video = await Video.findById(videoId);
+        if (video) {
+            video.views += 1;
+            await video.save();
+        }
+
+        await user.save();
+  
+        console.log(`Video added to watch history for user ${userId}`);
+    } catch (error) {
+        console.error(error);
+        // Handle error
+    }
+  };
 const getAllVideos= asyncHandler(async(req,res)=>{
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
@@ -107,15 +136,18 @@ const publishAVideo= asyncHandler(async(req,res)=>{
 
 
 })
-const
- getVideoById= asyncHandler(async(req,res)=>{
+const getVideoById= asyncHandler(async(req,res)=>{
     const {videoId}=req.params;
     if(!videoId){
         throw new ApiError(501,"User id is required")
     }
     const video= await Video.findById(videoId);
+    const ispresent=await User.findOne({watchHistory:videoId})
     if(!video){
         throw new ApiError(400,"Video does not exist")
+    }
+    if(!ispresent){
+        await addVideoToWatchHistory(req.user._id,videoId);
     }
     return res.status(200).json(new ApiResponse(200,video,"Video fetched Successfully"))
     
