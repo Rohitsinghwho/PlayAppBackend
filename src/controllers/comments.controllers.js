@@ -41,6 +41,12 @@ const getVideoComments = asyncHandler(async (req, res) => {
                 
 
             }
+        },
+        {
+            $skip:(page-1)*limit,
+        },
+        {
+            $limit:Number(limit),
         }
     ])
     // console.log(AllComments)
